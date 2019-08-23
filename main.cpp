@@ -1,118 +1,132 @@
-// A C++ program to implement greedy algorithm for graph coloring
 #include <iostream>
+#include <vector>
 #include <fstream>
-#include <list>
+#include <time.h>
+
 using namespace std;
 
-// A class that represents an undirected graph
-class Graph
-{
-    int V; // No. of vertices
-    list<int> *adj; // A dynamic array of adjacency lists
+class Graph {
+    int V; // number of vertices
+    int E; // current number of edges
+    vector<long long> vList[10000]; // list of vertices
+
 public:
-    // Constructor and destructor
-    Graph(int V) { this->V = V; adj = new list<int>[V]; }
-    ~Graph()	 { delete [] adj; }
-
-    // function to add an edge to graph
-    void addEdge(int v, int w);
-
-    // Prints greedy coloring of the vertices
+    Graph(int V);
+    void addEdge(int a, int b);
+    void writeEdges();
     void greedyColoring();
 };
 
-void Graph::addEdge(int v, int w)
-{
-    adj[v].push_back(w);
-    adj[w].push_back(v); // Note: the graph is undirected
+Graph::Graph(int V) {
+    this->V = V;
+    this->E = 0;
 }
 
-// Assigns colors (starting from 0) to all vertices and prints
-// the assignment of colors
-void Graph::greedyColoring()
-{
-    int result[V];
+void Graph::addEdge(int a, int b) {
+    vList[a].push_back(b);
+    vList[b].push_back(a);
+    E++;
+}
 
-    int num_color = 0;
+void Graph::writeEdges() {
+    for(int i = 0; i < V; i++) {
+        cout<<"Vertex nr "<<i<<": ";
+        for(int j = 0; j < vList[i].size(); j++) {
+            cout<<vList[i][j]<<" ";
+        }
+        cout<<endl;
+    }
+    cout<<"Liczba krawedzi: "<<E<<endl;
+}
 
-    // Assign the first color to first vertex
-    result[0] = 0;
+void Graph::greedyColoring() {
+    bool availableColors[V+1]; // availableColors[2] == 0 means that color nr 2 is not available for tested vertex
 
-    // Initialize remaining V-1 vertices as unassigned
-    for (int u = 1; u < V; u++)
-        result[u] = -1; // no color is assigned to u
+    int colors[V+1]; // which colors have vertices
 
-    // A temporary array to store the available colors. True
-    // value of available[cr] would mean that the color cr is
-    // assigned to one of its adjacent vertices
-    bool available[V];
-    int cr = 0;
-    for (cr = 0; cr < V; cr++)
-        available[cr] = false;
+    for(int i = 0; i < V; i++) {
+        colors[i] = -1;
+    }
+    colors[0] = 0; // first vertex has the color number 0
 
-    // Assign colors to remaining V-1 vertices
-    for (int u = 1; u < V; u++)
-    {
-        // Process all adjacent vertices and flag their colors
-        // as unavailable
-        list<int>::iterator i;
-        for (i = adj[u].begin(); i != adj[u].end(); ++i)
-        {
-            if (result[*i] != -1)
-                available[result[*i]] = true;
+    for(int i = 1; i < V; i++) { // choose color for each vertex
+        // every color is available at the beginning
+        for(int j = 0; j < V; j++) {
+            availableColors[j] = 1;
         }
 
-        // Find the first available color
-        //int cr;
-        for (cr = 0; cr < V; cr++)
-        {
-            if (available[cr] == false)
+        // if there is any colored vertex connected to the "i" one with edge, sign it in availableColors array
+        // colors[x] == -1 means that there is no assigned color to x vertex
+        for(int j = 0; j < vList[i].size(); j++) {
+            if(colors[vList[i][j]] != -1) {
+                availableColors[colors[vList[i][j]]] = 0;
+            }
+        }
+        //////
+        for(int j = 0; j < V; j++) {
+            if(availableColors[j] == 1) {
+                colors[i] = j;
                 break;
+            }
         }
 
-        result[u] = cr; // Assign the found color
-
-        if(cr > num_color)
-        {
-            num_color = cr;
-        }
-
-        // Reset the values back to false for the next iteration
-        for (i = adj[u].begin(); i != adj[u].end(); ++i)
-        {
-            if (result[*i] != -1)
-                available[result[*i]] = false;
-        }
     }
 
-    // print the result
-    /*for (int u = 0; u < V; u++)
-    {
-        cout << "Vertex " << u << " ---> Color " << result[u] << endl;
-    }*/
+    // find max nr of color
+    int maximum = -1;
+    for (int i = 0; i < V; i ++ ) {
+        if(colors[i] > maximum) maximum = colors[i];
+    }
 
-    cout<<"The number of color is : "<<num_color<<endl;
-
+    cout << "To color this graph we need: " << maximum+1 << " colors."<<endl;
 }
 
-// Driver program to test above function
+Graph edgesFromConsole() {
+    int numberOfEdges, a, b, numberOfVertex;
+
+    cout << "Number of vertices: ";
+    cin >> numberOfVertex;
+
+    Graph g(numberOfVertex);
+
+    cout << endl << "Number of edges: ";
+    cin >> numberOfEdges;
+
+    cout << endl << "Edges: ";
+    for(int i = 0; i < numberOfEdges; i++) {
+        cin >> a >> b;
+        g.addEdge(a, b);
+    }
+
+    return g;
+}
+
+Graph edgesFromFile() {
+    int numberOfVertex, numberOfEdges, a, b;
+    fstream file;
+    file.open("data.txt", ios::in);
+
+    file >> numberOfVertex;
+
+    Graph g(numberOfVertex);
+
+    while(!file.eof()) {
+        file >> a >> b;
+        g.addEdge(a, b);
+    }
+    file.close();
+    return g;
+}
+
 int main()
 {
-    ifstream in;
-    in.open("data.txt");
-    int num_vertex = 0;
-    int num_edges = 0;
-    in>>num_edges>>num_vertex;
-    cout<<num_edges<<" "<<num_vertex<<endl;
-    Graph g(num_vertex);
-    int start_point, end_point;
-    for(int i = 0; i < num_edges; i++)
-    {
-        in>>start_point>>end_point;
-        //cout<<start_point<<" "<<end_point<<endl;
-        g.addEdge(start_point,end_point);
-    }
+    clock_t start, end;
+    start = clock();
+    Graph g = edgesFromFile();
 
+    //g.writeEdges();
     g.greedyColoring();
+    end = clock();
+    printf("totile time=%f\n",(float)(end-start)*1000/CLOCKS_PER_SEC);
     return 0;
 }
