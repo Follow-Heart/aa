@@ -99,7 +99,7 @@ void Graph::greedyColoring()
 int main()
 {
     ifstream in;
-    in.open("out.ca-AstroPh");
+    in.open("data.txt");
     int num_vertex = 0;
     int num_edges = 0;
     in>>num_edges>>num_vertex;
